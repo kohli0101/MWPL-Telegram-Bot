@@ -2,7 +2,7 @@ name: MWPL Telegram Bot
 
 on:
   schedule:
-    - cron: '30 13 * * *'  # Runs every day at 7:00 PM IST (13:30 UTC)
+    - cron: '30 9 * * *'  # 09:30 UTC = 03:00 PM IST
   workflow_dispatch:       # Manual Run Button
 
 jobs:
