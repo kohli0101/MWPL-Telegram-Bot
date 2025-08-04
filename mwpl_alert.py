@@ -9,7 +9,7 @@ BOT_TOKEN = os.environ['BOT_TOKEN']
 CHAT_ID = os.environ['CHAT_ID']
 
 def get_banned_stocks():
-    url = 'https://www.nseindia.com/market-data/securities-in-ban-period-fno'
+    url = 'https://www.niftytrader.in/ban-list'
     headers = {
         'User-Agent': 'Mozilla/5.0',
         'Accept': 'text/html,application/xhtml+xml'
