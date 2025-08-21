@@ -1,0 +1,29 @@
+name: Chartink Bot
+
+on:
+  schedule:
+    - cron: "50 4 * * 1-5"   # 10:20 AM IST (Mon-Fri)
+    - cron: "45 6 * * 1-5"   # 12:15 PM IST (Mon-Fri)
+    - cron: "45 9 * * 1-5"   # 03:15 PM IST (Mon-Fri)
+  workflow_dispatch:          # manual run option
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run Chartink Bot
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+        run: python chartink_bot.py
