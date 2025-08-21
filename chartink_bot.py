@@ -4,17 +4,21 @@ import os
 BOT_TOKEN = os.environ["BOT_TOKEN"]
 CHAT_ID = os.environ["CHAT_ID"]
 
-# Example Chartink Screener URL
-CHARTINK_URL = "https://chartink.com/screener/f-f-1hr-swing"
-
 def fetch_chartink_results():
+    # Your screener clause
+    payload = {
+        "scan_clause": '( {33489} ( [=1] 30 minute low < [=-1] 30 minute close and [=1] 1 hour close > 1 day ago high and [=1] 1 hour "close - 1 candle ago close / 1 candle ago close * 100" < 2 and [=1] 1 hour "close - 1 candle ago close / 1 candle ago close * 100" > 1 ) )'
+    }
+    url = "https://chartink.com/screener/process"
+
     try:
-        response = requests.post("https://chartink.com/screener/process", data={"scan_clause": "( {33489} ( [=1] 30 minute low < [=-1] 30 minute close and [=1] 1 hour close > 1 day ago high and [=1] 1 hour "close - 1 candle ago close / 1 candle ago close * 100" < 2 and [=1] 1 hour "close - 1 candle ago close / 1 candle ago close * 100" > 1 ) )"})
+        response = requests.post(url, data=payload)
+        response.raise_for_status()
         data = response.json()
         stocks = [item["nsecode"] for item in data.get("data", [])]
         return stocks
     except Exception as e:
-        return [f"Error: {e}"]
+        return [f"Error: {e}\nResponse: {response.text[:200]}"]
 
 def send_message(text):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -22,8 +26,8 @@ def send_message(text):
 
 if __name__ == "__main__":
     stocks = fetch_chartink_results()
-    if stocks:
+    if stocks and not stocks[0].startswith("Error"):
         message = "📊 Chartink Screener Results:\n" + "\n".join(stocks)
     else:
-        message = "⚠️ No stocks found."
+        message = "⚠️ No stocks found or error.\n" + "\n".join(stocks)
     send_message(message)
