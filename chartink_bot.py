@@ -5,14 +5,23 @@ BOT_TOKEN = os.environ["BOT_TOKEN"]
 CHAT_ID = os.environ["CHAT_ID"]
 
 def fetch_chartink_results():
-    # Your screener clause
+    session = requests.Session()
+
+    # First, visit Chartink to grab cookies (important!)
+    session.get("https://chartink.com")
+
+    # Now send screener request with scan_clause
     payload = {
         "scan_clause": '( {33489} ( [=1] 30 minute low < [=-1] 30 minute close and [=1] 1 hour close > 1 day ago high and [=1] 1 hour "close - 1 candle ago close / 1 candle ago close * 100" < 2 and [=1] 1 hour "close - 1 candle ago close / 1 candle ago close * 100" > 1 ) )'
     }
     url = "https://chartink.com/screener/process"
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "Referer": "https://chartink.com/screener/f-f-1hr-swing"
+    }
 
     try:
-        response = requests.post(url, data=payload)
+        response = session.post(url, data=payload, headers=headers)
         response.raise_for_status()
         data = response.json()
         stocks = [item["nsecode"] for item in data.get("data", [])]
