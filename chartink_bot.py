@@ -9,7 +9,7 @@ CHARTINK_URL = "https://chartink.com/screener/f-f-1hr-swing"
 
 def fetch_chartink_results():
     try:
-        response = requests.post("https://chartink.com/screener/process", data={"scan_clause": ""})
+        response = requests.post("https://chartink.com/screener/process", data={"scan_clause": "( {33489} ( [=1] 30 minute low < [=-1] 30 minute close and [=1] 1 hour close > 1 day ago high and [=1] 1 hour "close - 1 candle ago close / 1 candle ago close * 100" < 2 and [=1] 1 hour "close - 1 candle ago close / 1 candle ago close * 100" > 1 ) )"})
         data = response.json()
         stocks = [item["nsecode"] for item in data.get("data", [])]
         return stocks
