@@ -1,44 +1,29 @@
-name: Chartink Screener Bot
+name: Chartink Bot
 
 on:
   schedule:
-    - cron: "0 5 * * 1-5"   # 10:30 AM IST (5:00 UTC)
-    - cron: "0 7 * * 1-5"   # 12:30 PM IST (7:00 UTC)
-    - cron: "45 9 * * 1-5"  # 03:15 PM IST (9:45 UTC)
-  workflow_dispatch:
+    - cron: "50 4 * * 1-5"   # 10:20 AM IST (Mon-Fri)
+    - cron: "45 6 * * 1-5"   # 12:15 PM IST (Mon-Fri)
+    - cron: "45 9 * * 1-5"   # 03:15 PM IST (Mon-Fri)
+  workflow_dispatch:          # manual run option
 
 jobs:
-  run:
+  run-bot:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
 
-    - name: Install dependencies
-      run: pip install requests tabulate
+      - name: Install dependencies
+        run: pip install requests
 
-    - name: Ensure results.json exists
-      run: |
-        if [ ! -f results.json ]; then
-          echo "{}" > results.json
-        fi
-
-    - name: Run Chartink Screener Bot
-      run: python screener.py
-      env:
-        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-
-    - name: Commit updated results.json
-      run: |
-        git config --global user.name "github-actions"
-        git config --global user.email "github-actions@github.com"
-        git add results.json || echo "No results.json to add"
-        git commit -m "Update results.json" || echo "No changes to commit"
-        git push
+      - name: Run Chartink Bot
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+        run: python chartink_bot.py
