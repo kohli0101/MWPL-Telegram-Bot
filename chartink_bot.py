@@ -9,25 +9,36 @@ def fetch_chartink_results():
     session = requests.Session()
     headers = {"User-Agent": "Mozilla/5.0"}
 
-    # Step 1: Get main Chartink page to grab CSRF token
+    # Step 1: Get CSRF token from homepage
     r = session.get("https://chartink.com", headers=headers)
     token_match = re.search(r'<meta name="csrf-token" content="(.*?)"', r.text)
     if not token_match:
         return ["Error: Could not find CSRF token"]
     csrf_token = token_match.group(1)
 
-    # Step 2: POST request with token + scan_clause
+    # Step 2: Request screener results
     payload = {
         "_token": csrf_token,
         "scan_clause": '( {33489} ( [=1] 30 minute low < [=-1] 30 minute close and [=1] 1 hour close > 1 day ago high and [=1] 1 hour "close - 1 candle ago close / 1 candle ago close * 100" < 2 and [=1] 1 hour "close - 1 candle ago close / 1 candle ago close * 100" > 1 ) )'
     }
-    process_url = "https://chartink.com/screener/process"
+    url = "https://chartink.com/screener/process"
     try:
-        resp = session.post(process_url, data=payload, headers=headers)
+        resp = session.post(url, data=payload, headers=headers)
         resp.raise_for_status()
         data = resp.json()
-        stocks = [item["nsecode"] for item in data.get("data", [])]
-        return stocks if stocks else ["⚠️ No stocks matched your screener"]
+        results = data.get("data", [])
+        if not results:
+            return ["⚠️ No stocks matched your screener"]
+
+        # Format stocks with Price + Change %
+        formatted = []
+        for stock in results:
+            symbol = stock.get("nsecode", "N/A")
+            price = stock.get("close", "N/A")
+            change = stock.get("per_chg", "N/A")
+            formatted.append(f"{symbol} → ₹{price} ({change}%)")
+
+        return formatted
     except Exception as e:
         return [f"Error: {e}\nResponse: {resp.text[:200]}"]
 
