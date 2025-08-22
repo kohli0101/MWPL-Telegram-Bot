@@ -9,10 +9,9 @@ def fetch_chartink_results():
     session = requests.Session()
     headers = {"User-Agent": "Mozilla/5.0"}
 
-    # Step 1: Get screener page (this contains CSRF token)
-    url = "https://chartink.com/screener/f-f-1hr-swing"
-    r = session.get(url, headers=headers)
-    token_match = re.search(r'name="_token" value="(.*?)"', r.text)
+    # Step 1: Get main Chartink page to grab CSRF token
+    r = session.get("https://chartink.com", headers=headers)
+    token_match = re.search(r'<meta name="csrf-token" content="(.*?)"', r.text)
     if not token_match:
         return ["Error: Could not find CSRF token"]
     csrf_token = token_match.group(1)
@@ -28,7 +27,7 @@ def fetch_chartink_results():
         resp.raise_for_status()
         data = resp.json()
         stocks = [item["nsecode"] for item in data.get("data", [])]
-        return stocks
+        return stocks if stocks else ["⚠️ No stocks matched your screener"]
     except Exception as e:
         return [f"Error: {e}\nResponse: {resp.text[:200]}"]
 
@@ -41,5 +40,5 @@ if __name__ == "__main__":
     if stocks and not stocks[0].startswith("Error"):
         message = "📊 Chartink Screener Results:\n" + "\n".join(stocks)
     else:
-        message = "⚠️ No stocks found or error.\n" + "\n".join(stocks)
+        message = "\n".join(stocks)
     send_message(message)
