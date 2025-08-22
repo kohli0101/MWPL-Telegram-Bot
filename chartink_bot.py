@@ -1,4 +1,5 @@
 import requests
+import re
 import os
 
 BOT_TOKEN = os.environ["BOT_TOKEN"]
@@ -6,28 +7,30 @@ CHAT_ID = os.environ["CHAT_ID"]
 
 def fetch_chartink_results():
     session = requests.Session()
+    headers = {"User-Agent": "Mozilla/5.0"}
 
-    # First, visit Chartink to grab cookies (important!)
-    session.get("https://chartink.com")
+    # Step 1: Get screener page (this contains CSRF token)
+    url = "https://chartink.com/screener/f-f-1hr-swing"
+    r = session.get(url, headers=headers)
+    token_match = re.search(r'name="_token" value="(.*?)"', r.text)
+    if not token_match:
+        return ["Error: Could not find CSRF token"]
+    csrf_token = token_match.group(1)
 
-    # Now send screener request with scan_clause
+    # Step 2: POST request with token + scan_clause
     payload = {
+        "_token": csrf_token,
         "scan_clause": '( {33489} ( [=1] 30 minute low < [=-1] 30 minute close and [=1] 1 hour close > 1 day ago high and [=1] 1 hour "close - 1 candle ago close / 1 candle ago close * 100" < 2 and [=1] 1 hour "close - 1 candle ago close / 1 candle ago close * 100" > 1 ) )'
     }
-    url = "https://chartink.com/screener/process"
-    headers = {
-        "User-Agent": "Mozilla/5.0",
-        "Referer": "https://chartink.com/screener/f-f-1hr-swing"
-    }
-
+    process_url = "https://chartink.com/screener/process"
     try:
-        response = session.post(url, data=payload, headers=headers)
-        response.raise_for_status()
-        data = response.json()
+        resp = session.post(process_url, data=payload, headers=headers)
+        resp.raise_for_status()
+        data = resp.json()
         stocks = [item["nsecode"] for item in data.get("data", [])]
         return stocks
     except Exception as e:
-        return [f"Error: {e}\nResponse: {response.text[:200]}"]
+        return [f"Error: {e}\nResponse: {resp.text[:200]}"]
 
 def send_message(text):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
