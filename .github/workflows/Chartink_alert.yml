@@ -1,29 +1,39 @@
-name: Chartink Bot
+name: Chartink Screener Bot
 
 on:
   schedule:
-    - cron: "50 4 * * 1-5"   # 10:20 AM IST (Mon-Fri)
-    - cron: "45 6 * * 1-5"   # 12:15 PM IST (Mon-Fri)
-    - cron: "45 9 * * 1-5"   # 03:15 PM IST (Mon-Fri)
-  workflow_dispatch:          # manual run option
+    - cron: "45 3 * * 1-5"  # 09:15 AM IST reset (03:45 UTC)
+    - cron: "0 5 * * 1-5"   # 10:30 AM IST (05:00 UTC)
+    - cron: "0 7 * * 1-5"   # 12:30 PM IST (07:00 UTC)
+    - cron: "15 9 * * 1-5"  # 03:15 PM IST (09:45 UTC)
+  workflow_dispatch:        # manual trigger
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+    - name: Checkout repo
+      uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
 
-      - name: Install dependencies
-        run: pip install requests
+    - name: Install dependencies
+      run: pip install requests
 
-      - name: Run Chartink Bot
-        env:
-          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-          CHAT_ID: ${{ secrets.CHAT_ID }}
-        run: python chartink_bot.py
+    - name: Run Screener Bot
+      env:
+        BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        CHAT_ID: ${{ secrets.CHAT_ID }}
+      run: python screener.py
+
+    - name: Commit updated results.json
+      run: |
+        git config --global user.name "github-actions"
+        git config --global user.email "actions@github.com"
+        git add results.json
+        git commit -m "Update screener results [skip ci]" || echo "No changes"
+        git push
