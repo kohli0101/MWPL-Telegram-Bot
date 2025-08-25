@@ -30,7 +30,7 @@ def fetch_chartink_results():
         if not results:
             return ["⚠️ No stocks matched your screener"]
 
-        # Build table
+        # Build tables
         table_lines = []
         table_lines.append("SYMBOL     PRICE     CHANGE%")
         table_lines.append("--------------------------------")
