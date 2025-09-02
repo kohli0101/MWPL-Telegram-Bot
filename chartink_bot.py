@@ -7,7 +7,10 @@ CHAT_ID = os.environ["CHAT_ID"]
 
 def fetch_chartink_results():
     session = requests.Session()
-    headers = {"User-Agent": "Mozilla/5.0"}
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "X-Requested-With": "XMLHttpRequest"
+    }
 
     # Step 1: Get CSRF token
     r = session.get("https://chartink.com", headers=headers)
@@ -30,31 +33,52 @@ def fetch_chartink_results():
         if not results:
             return ["⚠️ No stocks matched your screener"]
 
-        # Build tables
+        # Build table
         table_lines = []
         table_lines.append("SYMBOL     PRICE     CHANGE%")
         table_lines.append("--------------------------------")
+
+        total_price = 0.0
+        weighted_change = 0.0
+
         for stock in results:
             symbol = stock.get("nsecode", "N/A")
-            price = stock.get("close", "N/A")
-            change = stock.get("per_chg", "N/A")
+            price = stock.get("close", 0.0) or 0.0
+            change = stock.get("per_chg", 0.0) or 0.0
+
+            # Accumulate totals
+            total_price += price
+            weighted_change += price * change
+
             # Align neatly
-            table_lines.append(f"{symbol:<10} {price:<9} {change:+}%" if isinstance(change,(int,float)) else f"{symbol:<10} {price:<9} {change}")
+            if isinstance(change, (int, float)):
+                table_lines.append(f"{symbol:<10} {price:<9.2f} {change:+.2f}%")
+            else:
+                table_lines.append(f"{symbol:<10} {price:<9} {change}")
+
+        # Compute totals
+        total_change = weighted_change / total_price if total_price else 0.0
+        table_lines.append("--------------------------------")
+        table_lines.append(f"{'TOTAL':<10} {total_price:<9.2f} {total_change:+.2f}%")
 
         return table_lines
     except Exception as e:
-        return [f"Error: {e}\nResponse: {resp.text[:200]}"]
+        response_text = resp.text[:200] if 'resp' in locals() else "No response"
+        return [f"Error: {e}\nResponse: {response_text}"]
 
 def send_message(text):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    requests.post(url, data={"chat_id": CHAT_ID, "text": text, "parse_mode": "MarkdownV2"})
+    try:
+        requests.post(url, data={"chat_id": CHAT_ID, "text": text, "parse_mode": "HTML"})
+    except Exception as e:
+        print(f"Telegram send failed: {e}")
 
 if __name__ == "__main__":
     stocks = fetch_chartink_results()
     if stocks and not stocks[0].startswith("Error"):
-        # Wrap table in ``` for monospace formatting
-        table = "```\n" + "\n".join(stocks) + "\n```"
-        message = "📊 *Chartink Screener Results*\n" + table
+        # Wrap table in <pre> for monospace formatting
+        table = "<pre>\n" + "\n".join(stocks) + "\n</pre>"
+        message = "📊 <b>Chartink Screener Results</b>\n" + table
     else:
         message = "\n".join(stocks)
     send_message(message)
