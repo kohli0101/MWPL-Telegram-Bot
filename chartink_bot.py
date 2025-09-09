@@ -3,7 +3,12 @@ import re
 import os
 
 BOT_TOKEN = os.environ["BOT_TOKEN"]
-CHAT_ID = os.environ["CHAT_ID"]
+
+# Support multiple recipients
+CHAT_IDS = [
+    os.environ["CHAT_ID"],        # your chat id
+    os.environ["FRIEND_CHAT_ID"]  # friend's chat id
+]
 
 def fetch_chartink_results():
     session = requests.Session()
@@ -12,18 +17,21 @@ def fetch_chartink_results():
         "X-Requested-With": "XMLHttpRequest"
     }
 
-    # Step 1: Get CSRF token
+    # Step 1: Always get a fresh CSRF token and cookies
     r = session.get("https://chartink.com", headers=headers)
     token_match = re.search(r'<meta name="csrf-token" content="(.*?)"', r.text)
     if not token_match:
         return ["Error: Could not find CSRF token"]
     csrf_token = token_match.group(1)
 
-    # Step 2: Screener process
+    # Update session headers to include CSRF token
+    session.headers.update({"X-CSRF-TOKEN": csrf_token})
+
+    # Step 2: Screener request
     payload = {
-        "_token": csrf_token,
         "scan_clause": '( {33489} ( [=1] 30 minute low < [=-1] 30 minute close and [=1] 1 hour close > 1 day ago high and [=1] 1 hour "close - 1 candle ago close / 1 candle ago close * 100" < 2 and [=1] 1 hour "close - 1 candle ago close / 1 candle ago close * 100" > 1 ) )'
     }
+
     url = "https://chartink.com/screener/process"
     try:
         resp = session.post(url, data=payload, headers=headers)
@@ -43,18 +51,14 @@ def fetch_chartink_results():
 
         for stock in results:
             symbol = stock.get("nsecode", "N/A")
-            price = stock.get("close", 0.0) or 0.0
-            change = stock.get("per_chg", 0.0) or 0.0
+            price = float(stock.get("close", 0.0) or 0.0)
+            change = float(stock.get("per_chg", 0.0) or 0.0)
 
             # Accumulate totals
             total_price += price
             weighted_change += price * change
 
-            # Align neatly
-            if isinstance(change, (int, float)):
-                table_lines.append(f"{symbol:<10} {price:<9.2f} {change:+.2f}%")
-            else:
-                table_lines.append(f"{symbol:<10} {price:<9} {change}")
+            table_lines.append(f"{symbol:<10} {price:<9.2f} {change:+.2f}%")
 
         # Compute totals
         total_change = weighted_change / total_price if total_price else 0.0
@@ -62,16 +66,19 @@ def fetch_chartink_results():
         table_lines.append(f"{'TOTAL':<10} {total_price:<9.2f} {total_change:+.2f}%")
 
         return table_lines
+
     except Exception as e:
         response_text = resp.text[:200] if 'resp' in locals() else "No response"
         return [f"Error: {e}\nResponse: {response_text}"]
 
 def send_message(text):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    try:
-        requests.post(url, data={"chat_id": CHAT_ID, "text": text, "parse_mode": "HTML"})
-    except Exception as e:
-        print(f"Telegram send failed: {e}")
+    for chat_id in CHAT_IDS:
+        try:
+            requests.post(url, data={"chat_id": chat_id, "text": text, "parse_mode": "HTML"})
+            print(f"✅ Message sent to {chat_id}")
+        except Exception as e:
+            print(f"❌ Telegram send failed for {chat_id}: {e}")
 
 if __name__ == "__main__":
     stocks = fetch_chartink_results()
