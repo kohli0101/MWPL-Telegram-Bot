@@ -2,12 +2,12 @@ import requests
 import re
 import os
 
-BOT_TOKEN = os.environ["BOT_TOKEN"]
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "<PUT_YOUR_BOT_TOKEN_HERE>")
 
-# Support multiple recipients
+# Support multiple recipients (with default fallback values if env vars not set)
 CHAT_IDS = [
-    os.environ("CHAT_ID", "979202747"),        # your chat id
-    os.environ("FRIEND_CHAT_ID", "1617807992") # friend's chat id
+    os.environ.get("CHAT_ID", "979202747"),        # your chat id
+    os.environ.get("FRIEND_CHAT_ID", "1617807992") # friend's chat id
 ]
 
 def fetch_chartink_results():
