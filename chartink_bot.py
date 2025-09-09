@@ -6,8 +6,8 @@ BOT_TOKEN = os.environ["BOT_TOKEN"]
 
 # Support multiple recipients
 CHAT_IDS = [
-    os.environ["CHAT_ID"],        # your chat id
-    os.environ["FRIEND_CHAT_ID"]  # friend's chat id
+    os.environ["CHAT_ID", "979202747"],        # your chat id
+    os.environ["FRIEND_CHAT_ID", "1617807992"]  # friend's chat id
 ]
 
 def fetch_chartink_results():
