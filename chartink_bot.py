@@ -13,7 +13,7 @@ CHAT_IDS = [
 # Replace with your screener slug (the part after /screener/ in the URL)
 # Example: if your screener URL is https://chartink.com/screener/my-breakout-stocks
 # then set SCREENER_SLUG = "my-breakout-stocks"
-SCREENER_SLUG = "test-screener"  
+SCREENER_SLUG = "convergence-5m-2"  
 
 def fetch_chartink_results():
     session = requests.Session()
@@ -23,7 +23,7 @@ def fetch_chartink_results():
     }
 
     # Step 1: Visit screener page to get CSRF + cookies
-    screener_url = f"https://chartink.com/screener/convergence-2050100150257"
+    screener_url = f"https://chartink.com/screener/convergence-5m-2"
     r = session.get(screener_url, headers=headers)
     token_match = re.search(r'<meta name="csrf-token" content="(.*?)"', r.text)
     if not token_match:
