@@ -23,7 +23,7 @@ def fetch_chartink_results():
     }
 
     # Step 1: Visit screener page to get CSRF + cookies
-    screener_url = f"https://chartink.com/screener/f-f-1hr-swing"
+    screener_url = f"https://chartink.com/screener/convergence-2050100150257"
     r = session.get(screener_url, headers=headers)
     token_match = re.search(r'<meta name="csrf-token" content="(.*?)"', r.text)
     if not token_match:
